@@ -20,6 +20,7 @@ import org.aspectj.apache.bcel.generic.RET;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
@@ -120,6 +121,8 @@ public class SysResourceServiceImpl extends ServiceImpl<SysResourceDao, SysResou
   @Override
   @Transactional(readOnly = true)
   public List<SysResource> listByRoleIds(List<Short> roleIds) {
+    if(CollectionUtils.isEmpty(roleIds)) return null;
+
     MpLambdaQueryWrapper<SysResource> wrapper = new MpLambdaQueryWrapper<>();
     wrapper.in(SysResource::getId, listIds(roleIds));
     return baseMapper.selectList(wrapper);

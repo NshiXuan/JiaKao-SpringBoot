@@ -1,11 +1,13 @@
 package com.sx.jk.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sx.jk.common.cache.Caches;
 import com.sx.jk.common.enhance.MpLambdaQueryWrapper;
 import com.sx.jk.common.enhance.MyPage;
 import com.sx.jk.common.mapStruct.MapStructs;
 import com.sx.jk.common.util.Streams;
 import com.sx.jk.mapper.SysRoleDao;
+import com.sx.jk.mapper.SysUserRoleDao;
 import com.sx.jk.pojo.po.SysRole;
 import com.sx.jk.pojo.po.SysRoleResource;
 import com.sx.jk.pojo.po.SysUserRole;
@@ -32,6 +34,8 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleDao, SysRole> impleme
   private SysUserRoleService userRoleService;
   @Autowired
   private SysRoleResourceService roleResourceService;
+  @Autowired
+  private SysUserRoleDao userRoleDao;
 
   @Override
   @Transactional(readOnly = true)
@@ -70,6 +74,21 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleDao, SysRole> impleme
     // 保存角色信息
     if (!saveOrUpdate(po)) return false;
 
+    Short id = reqVo.getId();
+    if (id != null && id > 0) {
+      // 将拥有这个角色的用户从缓存中移除（让token失效，用户必须重新登录）
+      MpLambdaQueryWrapper<SysUserRole> wrapper = new MpLambdaQueryWrapper<>();
+      wrapper.select(SysUserRole::getRoleId);
+      wrapper.eq(SysUserRole::getRoleId, id);
+      List<Object> userIds = userRoleDao.selectObjs(wrapper);
+      if (!CollectionUtils.isEmpty(userIds)) {
+        for (Object userId : userIds) {
+          System.out.println(userId + "userID");
+          Caches.removeToken(Caches.get(userId));
+        }
+      }
+    }
+
     // 删除当前用户的所有角色信息
     roleResourceService.removeByRoleId(reqVo.getId());
 
@@ -97,7 +116,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleDao, SysRole> impleme
     if (userId == null || userId <= 0) return null;
     // 拿到角色id
     List<Short> ids = listIds(userId);
-    if(CollectionUtils.isEmpty(ids)) return null;
+    if (CollectionUtils.isEmpty(ids)) return null;
 
     MpLambdaQueryWrapper<SysRole> wrapper = new MpLambdaQueryWrapper<>();
     wrapper.in(SysRole::getId, listIds(userId));

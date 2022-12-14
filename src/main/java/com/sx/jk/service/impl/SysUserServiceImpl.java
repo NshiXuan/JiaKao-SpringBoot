@@ -7,7 +7,11 @@ import com.sx.jk.common.enhance.MyPage;
 import com.sx.jk.common.mapStruct.MapStructs;
 import com.sx.jk.common.util.Constants;
 import com.sx.jk.common.util.JsonVos;
+import com.sx.jk.common.util.Streams;
 import com.sx.jk.mapper.SysUserDao;
+import com.sx.jk.pojo.dto.SysUserDto;
+import com.sx.jk.pojo.po.SysResource;
+import com.sx.jk.pojo.po.SysRole;
 import com.sx.jk.pojo.po.SysUser;
 import com.sx.jk.pojo.po.SysUserRole;
 import com.sx.jk.pojo.result.CodeMsg;
@@ -17,11 +21,14 @@ import com.sx.jk.pojo.vo.list.SysUserVo;
 import com.sx.jk.pojo.vo.req.LoginReqVo;
 import com.sx.jk.pojo.vo.req.page.SysUserPageReqVo;
 import com.sx.jk.pojo.vo.req.save.SysUserReqVo;
+import com.sx.jk.service.SysResourceService;
+import com.sx.jk.service.SysRoleService;
 import com.sx.jk.service.SysUserRoleService;
 import com.sx.jk.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -34,6 +41,10 @@ import java.util.UUID;
 public class SysUserServiceImpl extends ServiceImpl<SysUserDao, SysUser> implements SysUserService {
   @Autowired
   private SysUserRoleService userRoleService;
+  @Autowired
+  private SysRoleService roleService;
+  @Autowired
+  private SysResourceService resourceService;
 
   @Override
   @Transactional(readOnly = true)
@@ -52,8 +63,15 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserDao, SysUser> impleme
     // 保存用户信息
     if (!saveOrUpdate(po)) return false;
 
-    // 删除当前用户的所有角色信息
-    userRoleService.removeByUserId(reqVo.getId());
+    Integer id = reqVo.getId();
+    if (id != null && id > 0) { // 更新
+      // 将更新成功的用户从缓存中移除（让token失效，用户必须重新登录）
+      Caches.removeToken(Caches.get(po.getId()));
+      Caches.remove(po.getId());
+
+      // 删除当前用户的所有角色信息
+      userRoleService.removeByUserId(reqVo.getId());
+    }
 
     // 保存角色信息
     String roleIdsStr = reqVo.getRoleIds();
@@ -101,8 +119,22 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserDao, SysUser> impleme
     // 生成Token，发送token给用户
     String token = UUID.randomUUID().toString();
 
+    SysUserDto dto = new SysUserDto();
+    dto.setUser(po);
+
+    // 根据用户id查询所有角色
+    List<SysRole> roles = roleService.listByUserId(po.getId());
+
+    // 根据用户id查询所有资源
+    if (!CollectionUtils.isEmpty(roles)) {
+      dto.setRoles(roles);
+      List<Short> roleIds = Streams.map(roles, SysRole::getId);
+      List<SysResource> resources = resourceService.listByRoleIds(roleIds);
+      dto.setResources(resources);
+    }
+
     // 存储token到缓存中
-    Caches.putToken(token, po);
+    Caches.putToken(token, dto);
 
     LoginVo vo = MapStructs.INSTANCE.po2loginVo(po);
     vo.setToken(token);
