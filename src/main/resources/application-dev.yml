@@ -16,7 +16,7 @@ jk:
     cors-origins:
       - http://localhost:63342
   upload:
-    base-path: D:/jiakao/
+    base-path: D:/jk/
     upload-path: upload/
     image-path: img/
     video-path: video/

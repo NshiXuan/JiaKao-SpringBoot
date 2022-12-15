@@ -24,7 +24,6 @@ public abstract class BaseController<Po, ReqVo> {
   @PostMapping("/remove")
   @ApiOperation("删除一个或多个数据")
   public JsonVo remove(@NotBlank(message = "id不能为空")
-                       @Min(0)
                        @RequestParam String id) {
     String[] idStrs = id.split(",");
     if (getService().removeByIds(Arrays.asList(idStrs))) {

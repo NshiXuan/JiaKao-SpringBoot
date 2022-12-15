@@ -35,12 +35,20 @@
         <swagger-models.version>1.6.2</swagger-models.version>
         <mapstruct.version>1.4.1.Final</mapstruct.version>
         <captcha.version>1.6.2</captcha.version>
+        <commons-io.version>2.7</commons-io.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- IO -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
         </dependency>
 
         <!-- 权限控制 -->

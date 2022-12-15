@@ -21,3 +21,9 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+      # 逻辑删除字段
+      logic-delete-field: deleted
+      # 代表已删除的字段值
+      logic-delete-value: 1
+      # 代表未删除的字段值
+      logic-not-delete-value: 0

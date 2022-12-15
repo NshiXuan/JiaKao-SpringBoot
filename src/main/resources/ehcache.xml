@@ -27,6 +27,8 @@
             <!-- time to idle 只要7天内又访问，就延长为7天过期 -->
             <tti unit="days">7</tti>
         </expiry>
+
+        <!-- 监听器 -->
         <listeners>
             <listener>
                 <class>com.sx.jk.common.cache.TokenCacheListener</class>

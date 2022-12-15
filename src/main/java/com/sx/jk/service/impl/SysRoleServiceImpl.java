@@ -83,7 +83,6 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleDao, SysRole> impleme
       List<Object> userIds = userRoleDao.selectObjs(wrapper);
       if (!CollectionUtils.isEmpty(userIds)) {
         for (Object userId : userIds) {
-          System.out.println(userId + "userID");
           Caches.removeToken(Caches.get(userId));
         }
       }
